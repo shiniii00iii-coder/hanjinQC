@@ -1,33 +1,20 @@
 import streamlit as st
 import os
-import base64
+import urllib.parse
 
-# 페이지 설정 (넓게 보기)
 st.set_page_config(page_title="한진QC 규격서 시스템", layout="wide")
-
-# 제목 및 스타일
 st.title("📋 한진QC 규격서 관리 시스템 (test423)")
-st.markdown("""
-    <style>
-    .main {
-        background-color: #f5f5f5;
-    }
-    stDownloadButton {
-        display: none;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+
+# 1. 깃허브 주소 설정 (네 계정 정보에 맞춰서 수정했어)
+# 이 주소는 깃허브에 올라간 실제 PDF 파일의 '생' 주소를 가져오기 위함이야.
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/shiniii00iii-coder/hanjinQC/main/pdf_files/"
 
 pdf_path = "pdf_files"
-
-# 폴더 체크
 if not os.path.exists(pdf_path):
     os.makedirs(pdf_path)
 
-# 파일 목록
 files = [f for f in os.listdir(pdf_path) if f.endswith(".pdf")]
 
-# 사이드바
 st.sidebar.header("📁 규격서 목록")
 if not files:
     st.sidebar.info("pdf_files 폴더에 PDF 파일을 올려주세요.")
@@ -37,25 +24,18 @@ else:
     if selected_file:
         st.subheader(f"📄 현재 열람 중: {selected_file}")
         
-        file_full_path = os.path.join(pdf_path, selected_file)
+        # 파일명을 인터넷 주소 형식으로 변환
+        encoded_file_name = urllib.parse.quote(selected_file)
+        file_url = f"{GITHUB_RAW_URL}{encoded_file_name}"
         
-        with open(file_full_path, "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-            
-            # PDF를 직접 브라우저에 임베딩 (가장 표준적인 방법)
-            # height를 1000으로 늘려서 시원하게 보이게 함
-            pdf_display = f'''
-                <div style="border: 1px solid #ccc; border-radius: 5px;">
-                    <embed
-                        src="data:application/pdf;base64,{base64_pdf}"
-                        width="100%"
-                        height="1000"
-                        type="application/pdf"
-                    >
-                </div>
-            '''
-            st.markdown(pdf_display, unsafe_allow_html=True)
-
-            # 혹시 모를 상황을 대비해 아래쪽에 작게 다운로드 버튼 유지
-            st.divider()
-            st.download_button("📥 파일이 안 보이나요? 직접 다운로드", f.read(), file_name=selected_file)
+        # 2. 구글 문서 뷰어를 사용하여 PDF 바로 띄우기
+        # 이 방식은 브라우저 보안을 우회해서 화면에 바로 보여주는 가장 확실한 방법이야.
+        google_view_url = f"https://docs.google.com/viewer?url={file_url}&embedded=true"
+        
+        st.markdown(
+            f'<iframe src="{google_view_url}" width="100%" height="1000" style="border: none;"></iframe>',
+            unsafe_allow_html=True
+        )
+        
+        # 혹시 몰라서 하단에 링크 하나만 더 달아둘게
+        st.caption(f"[화면이 안 나오면 클릭해서 직접 보기]({file_url})")
