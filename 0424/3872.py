@@ -5,7 +5,7 @@ import math
 st.set_page_config(page_title="한진 0424 업무지원", layout="centered")
 
 st.title("📏 중공철근(3872) 통합 계산기")
-st.write("치수를 입력하여 단면적을 구하고, 시험 하중(kN)을 입력해 응력(MPa)을 확인하세요.")
+st.write("치수를 입력해 단면적을 구하고, 인장/항복 하중(kN)을 입력해 강도를 확인하세요.")
 st.divider()
 
 # 1. 단면적 계산 섹션
@@ -16,7 +16,6 @@ with col1:
 with col2:
     wt = st.number_input("두께 (WT, mm)", min_value=0.0, step=0.1, key="wt")
 
-# 계산 로직 및 결과 표시
 area = 0.0
 if od > 0 and wt > 0:
     if od <= 2 * wt:
@@ -32,38 +31,35 @@ if od > 0 and wt > 0:
 
         st.divider()
 
-        # 2. 응력 변환 섹션 (kN -> MPa)
-        st.subheader("⚙️ 2. 응력(MPa) 변환")
+        # 2. 인장 및 항복강도 계산 섹션
+        st.subheader("⚙️ 2. 인장강도 및 항복강도 계산")
         st.info(f"현재 적용 단면적: {area:.2f} mm²")
         
-        kn_val = st.number_input("시험 하중 입력 (kN)", min_value=0.0, step=0.1, key="kn_val")
+        col_tensile, col_yield = st.columns(2)
         
-        if kn_val > 0:
-            # MPa = (kN * 1000) / mm²
-            mpa = (kn_val * 1000) / area
-            st.metric("계산된 응력 (Stress)", f"{mpa:.2f} MPa")
-            
-            with st.expander("📝 변환 수식 보기"):
-                st.write(f"공식: (하중 {kn_val} kN × 1000) ÷ 단면적 {area:.2f} mm²")
-                st.write(f"결과: **{mpa:.2f} N/mm² (MPa)**")
-        else:
-            st.write("하중(kN)을 입력하면 MPa 결과가 여기에 표시됩니다.")
+        with col_tensile:
+            max_load = st.number_input("최대 하중 (kN)", min_value=0.0, step=0.1, help="인장강도용 최대 하중")
+        with col_yield:
+            yield_load = st.number_input("항복 하중 (kN)", min_value=0.0, step=0.1, help="항복강도용 항복점 하중")
+        
+        if st.button("강도 계산 실행", use_container_width=True):
+            if max_load > 0 or yield_load > 0:
+                res_t1, res_t2 = st.columns(2)
+                
+                if max_load > 0:
+                    tensile_strength = (max_load * 1000) / area
+                    res_t1.metric("인장강도", f"{tensile_strength:.2f} MPa")
+                
+                if yield_load > 0:
+                    yield_strength = (yield_load * 1000) / area
+                    res_t2.metric("항복강도", f"{yield_strength:.2f} MPa")
+                
+                st.caption(f"※ 계산 공식: (하중 × 1000) ÷ {area:.2f} mm²")
+            else:
+                st.warning("하중 값을 입력해 주세요.")
 
 else:
     st.info("외경과 두께를 입력하면 계산이 시작됩니다.")
 
 st.divider()
-
-# 하중 단위 변환 (참고용으로 하단 배치)
-with st.expander("⚖️ 하중 단위 간편 변환 (kN ↔ ton)"):
-    col_a, col_b = st.columns(2)
-    with col_a:
-        unit_val = st.number_input("값 입력", min_value=0.0, key="unit_val")
-    with col_b:
-        unit_mode = st.radio("방향", ["kN → ton", "ton → kN"], horizontal=True)
-    
-    if unit_val > 0:
-        if unit_mode == "kN → ton":
-            st.write(f"결과: **{unit_val / 9.80665:.3f} ton**")
-        else:
-            st.write(f"결과: **{unit_val * 9.80665:.3f} kN**")
+st.caption("© 2026 한진QC 0424 프로젝트")
