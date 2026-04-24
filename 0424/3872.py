@@ -5,66 +5,65 @@ import math
 st.set_page_config(page_title="한진 0424 업무지원", layout="centered")
 
 st.title("📏 중공철근(3872) 통합 계산기")
+st.write("치수를 입력하여 단면적을 구하고, 시험 하중(kN)을 입력해 응력(MPa)을 확인하세요.")
 st.divider()
 
-# 세션 상태를 사용하여 단면적 값을 탭 간에 공유
-if 'area' not in st.session_state:
-    st.session_state.area = 0.0
+# 1. 단면적 계산 섹션
+st.subheader("📍 1. 단면적 계산")
+col1, col2 = st.columns(2)
+with col1:
+    od = st.number_input("외경 (OD, mm)", min_value=0.0, step=0.1, key="od")
+with col2:
+    wt = st.number_input("두께 (WT, mm)", min_value=0.0, step=0.1, key="wt")
 
-tab1, tab2 = st.tabs(["📏 단면적 계산", "⚖️ 단위 및 강도 변환"])
-
-with tab1:
-    st.subheader("📍 단면적 계산")
-    col1, col2 = st.columns(2)
-    with col1:
-        od = st.number_input("외경 (OD, mm)", min_value=0.0, step=0.1)
-    with col2:
-        wt = st.number_input("두께 (WT, mm)", min_value=0.0, step=0.1)
-
-    if st.button("단면적 계산 실행", use_container_width=True):
-        if od > 2 * wt and wt > 0:
-            id_val = od - (2 * wt)
-            st.session_state.area = (math.pi * (od**2 - id_val**2)) / 4
-            
-            st.success(f"✅ 계산 완료: 단면적 {st.session_state.area:.2f} mm²")
-            c1, c2 = st.columns(2)
-            c1.metric("내경 (ID)", f"{id_val:.2f} mm")
-            c2.metric("단면적 (Area)", f"{st.session_state.area:.2f} mm²")
-        else:
-            st.error("⚠️ 치수 입력을 확인해 주세요.")
-
-with tab2:
-    st.subheader("⚙️ 하중 및 응력(MPa) 변환")
-    
-    # kN <-> ton 변환 섹션
-    st.write("---")
-    st.markdown("**1. 하중 단위 변환 (kN ↔ ton)**")
-    load_val = st.number_input("하중 값 입력", min_value=0.0, step=1.0)
-    mode = st.radio("방향", ["kN → ton", "ton → kN"], horizontal=True)
-    
-    if st.button("하중 변환", use_container_width=True):
-        if mode == "kN → ton":
-            res = load_val / 9.80665
-            st.info(f"결과: **{res:.3f} ton**")
-        else:
-            res = load_val * 9.80665
-            st.info(f"결과: **{res:.3f} kN**")
-
-    # MPa 계산 섹션
-    st.write("---")
-    st.markdown("**2. 응력 계산 (kN → MPa)**")
-    kn_val = st.number_input("시험 하중 입력 (kN)", min_value=0.0, step=1.0)
-    
-    # 단면적이 계산되어 있는지 확인
-    if st.session_state.area > 0:
-        st.write(f"현재 적용된 단면적: **{st.session_state.area:.2f} mm²**")
-        if st.button("MPa 계산 (Stress)", use_container_width=True):
-            # MPa = N/mm2 이므로 kN에 1000을 곱함
-            mpa = (kn_val * 1000) / st.session_state.area
-            st.metric("계산된 응력 (Stress)", f"{mpa:.2f} MPa")
-            st.caption(f"공식: ({kn_val} × 1000) / {st.session_state.area:.2f}")
+# 계산 로직 및 결과 표시
+area = 0.0
+if od > 0 and wt > 0:
+    if od <= 2 * wt:
+        st.error("⚠️ 두께가 외경보다 두꺼울 수 없습니다!")
     else:
-        st.warning("⚠️ 첫 번째 탭에서 먼저 '단면적 계산'을 완료해 주세요.")
+        id_val = od - (2 * wt)
+        area = (math.pi * (od**2 - id_val**2)) / 4
+        
+        st.success(f"✅ 단면적 계산 완료")
+        res_c1, res_c2 = st.columns(2)
+        res_c1.metric("내경 (ID)", f"{id_val:.2f} mm")
+        res_c2.metric("단면적 (Area)", f"{area:.2f} mm²")
+
+        st.divider()
+
+        # 2. 응력 변환 섹션 (kN -> MPa)
+        st.subheader("⚙️ 2. 응력(MPa) 변환")
+        st.info(f"현재 적용 단면적: {area:.2f} mm²")
+        
+        kn_val = st.number_input("시험 하중 입력 (kN)", min_value=0.0, step=0.1, key="kn_val")
+        
+        if kn_val > 0:
+            # MPa = (kN * 1000) / mm²
+            mpa = (kn_val * 1000) / area
+            st.metric("계산된 응력 (Stress)", f"{mpa:.2f} MPa")
+            
+            with st.expander("📝 변환 수식 보기"):
+                st.write(f"공식: (하중 {kn_val} kN × 1000) ÷ 단면적 {area:.2f} mm²")
+                st.write(f"결과: **{mpa:.2f} N/mm² (MPa)**")
+        else:
+            st.write("하중(kN)을 입력하면 MPa 결과가 여기에 표시됩니다.")
+
+else:
+    st.info("외경과 두께를 입력하면 계산이 시작됩니다.")
 
 st.divider()
-st.caption("© 2026 한진QC 0424 프로젝트")
+
+# 하중 단위 변환 (참고용으로 하단 배치)
+with st.expander("⚖️ 하중 단위 간편 변환 (kN ↔ ton)"):
+    col_a, col_b = st.columns(2)
+    with col_a:
+        unit_val = st.number_input("값 입력", min_value=0.0, key="unit_val")
+    with col_b:
+        unit_mode = st.radio("방향", ["kN → ton", "ton → kN"], horizontal=True)
+    
+    if unit_val > 0:
+        if unit_mode == "kN → ton":
+            st.write(f"결과: **{unit_val / 9.80665:.3f} ton**")
+        else:
+            st.write(f"결과: **{unit_val * 9.80665:.3f} kN**")
