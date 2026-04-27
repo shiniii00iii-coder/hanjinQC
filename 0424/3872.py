@@ -15,11 +15,12 @@ if menu == "편평시험(Flattening) 계산":
     st.subheader("🔨 품목별 편평시험 목표치 계산")
     st.write("품목을 선택하고 외경(D)을 입력하면 목표 결과와 눌러야 할 양을 계산합니다.")
     
-    # 품목 선택 (사용자가 알려준 기준 적용)
+    # 품목 선택 리스트 (STG800 추가)
     item = st.selectbox("품목(강종) 선택", [
         "SGT275 (일반구조용)",
         "SGT355 (일반구조용)",
         "SGT550 (일반구조용)",
+        "STG800 (지반보강용)",  # 신규 추가
         "SPP (배관용)",
         "SPPS (압력배관용)",
         "STKM12B (기계구조용)",
@@ -32,11 +33,15 @@ if menu == "편평시험(Flattening) 계산":
     d_val = st.number_input("파이프 외경 입력 (D, mm)", min_value=0.0, step=0.1, format="%.2f")
     
     if d_val > 0:
-        # 7/8D 그룹
-        if item in ["SGT355 (일반구조용)", "SGT550 (일반구조용)", "SNT355E (건축구조용)"]:
+        # 1. 3/4D 그룹 (신규 STG800)
+        if item == "STG800 (지반보강용)":
+            ratio_str = "3/4 D"
+            h_val = (3/4) * d_val
+        # 2. 7/8D 그룹
+        elif item in ["SGT355 (일반구조용)", "SGT550 (일반구조용)", "SNT355E (건축구조용)"]:
             ratio_str = "7/8 D"
             h_val = (7/8) * d_val
-        # 2/3D 그룹
+        # 3. 2/3D 그룹 (기본값)
         else:
             ratio_str = "2/3 D"
             h_val = (2/3) * d_val
@@ -47,7 +52,7 @@ if menu == "편평시험(Flattening) 계산":
         st.divider()
         st.subheader("📊 시험 결과")
         
-        # 요청한 형식: 목표 높이(H) + 눌러야 할 양
+        # 강조 표시
         st.info(f"**시험 결과 목표높이: {h_val:.2f}mm ({press_val:.2f}mm 누를 것)**")
         
         col1, col2 = st.columns(2)
@@ -85,4 +90,4 @@ elif menu == "단면적/인장강도 계산":
         st.info("파이프의 외경과 두께를 입력해 주세요.")
 
 st.divider()
-st.caption("© 2026 한진QC - 업무지원 시스템 (V1.2)")
+st.caption("© 2026 한진QC - 업무지원 시스템 (V1.3)")
