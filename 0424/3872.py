@@ -15,16 +15,16 @@ if menu == "편평시험(Flattening) 계산":
     st.subheader("🔨 품목별 편평시험 목표치 계산")
     st.write("품목을 선택하고 외경(D)을 입력하면 목표 결과와 눌러야 할 양을 계산합니다.")
     
-    # 품목 선택 리스트 (STG800 추가)
+    # 요청하신 순서대로 품목 리스트 재배치
     item = st.selectbox("품목(강종) 선택", [
-        "SGT275 (일반구조용)",
+        "STG800 (지반보강용)",      # 1순위
+        "SGT275 (일반구조용)",      # 2순위
         "SGT355 (일반구조용)",
         "SGT550 (일반구조용)",
-        "STG800 (지반보강용)",  # 신규 추가
-        "SPP (배관용)",
-        "SPPS (압력배관용)",
-        "STKM12B (기계구조용)",
-        "SNT275E (건축구조용)",
+        "SPP (배관용)",            # 3순위
+        "SPPS (압력배관용)",        # 4순위
+        "STKM12B (기계구조용)",     # 5순위
+        "SNT275E (건축구조용)",     # 6순위
         "SNT355E (건축구조용)"
     ])
     
@@ -33,26 +33,25 @@ if menu == "편평시험(Flattening) 계산":
     d_val = st.number_input("파이프 외경 입력 (D, mm)", min_value=0.0, step=0.1, format="%.2f")
     
     if d_val > 0:
-        # 1. 3/4D 그룹 (신규 STG800)
-        if item == "STG800 (지반보강용)":
+        # 1. 3/4D 그룹 (지반보강용)
+        if "지반보강용" in item:
             ratio_str = "3/4 D"
             h_val = (3/4) * d_val
-        # 2. 7/8D 그룹
+        # 2. 7/8D 그룹 (일부 일반구조용 및 건축구조용)
         elif item in ["SGT355 (일반구조용)", "SGT550 (일반구조용)", "SNT355E (건축구조용)"]:
             ratio_str = "7/8 D"
             h_val = (7/8) * d_val
-        # 3. 2/3D 그룹 (기본값)
+        # 3. 2/3D 그룹 (나머지 기본값)
         else:
             ratio_str = "2/3 D"
             h_val = (2/3) * d_val
             
-        # 눌러야 할 양 계산 (외경 - 목표높이)
+        # 눌러야 할 양 계산
         press_val = d_val - h_val
             
         st.divider()
         st.subheader("📊 시험 결과")
         
-        # 강조 표시
         st.info(f"**시험 결과 목표높이: {h_val:.2f}mm ({press_val:.2f}mm 누를 것)**")
         
         col1, col2 = st.columns(2)
@@ -60,11 +59,6 @@ if menu == "편평시험(Flattening) 계산":
         col2.metric(label="압착 필요량 (Press)", value=f"{press_val:.2f} mm", delta=f"-{press_val:.2f} mm", delta_color="inverse")
         
         st.warning(f"💡 {item} 규격은 외경의 {ratio_str}까지 압착해야 합니다.")
-        
-        with st.expander("📝 계산 상세 정보"):
-            st.write(f"- 입력 외경(D): {d_val} mm")
-            st.write(f"- 적용 비율: {ratio_str}")
-            st.write(f"- 상세 계산: {d_val} × {ratio_str} = {h_val:.4f}")
     else:
         st.info("외경(D)을 입력해 주세요.")
 
@@ -90,4 +84,4 @@ elif menu == "단면적/인장강도 계산":
         st.info("파이프의 외경과 두께를 입력해 주세요.")
 
 st.divider()
-st.caption("© 2026 한진QC - 업무지원 시스템 (V1.3)")
+st.caption("© 2026 한진QC - 업무지원 시스템 (V1.4)")
